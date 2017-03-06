@@ -1,0 +1,17 @@
+#!/usr/bin/env node
+
+/**
+ * Module dependencies.
+ */
+
+const app = require('../src/app');
+const debug = require('debug')('jose-rest-api:server');
+
+/**
+ * Listen on provided port, on all network interfaces.
+ */
+const os = require('os');
+
+const server = app.listen(app.get('port'), () => {
+  debug(`Listening on  http://${os.hostname()}:${server.address().port}/`);
+});
