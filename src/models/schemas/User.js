@@ -88,7 +88,7 @@ module.exports = (mongoose, name) => {
   /* Authentication methods */
   schema.statics.authenticate = function(jwt_payload, done) {
     model.findOne({
-      id: jwt_payload.id
+      _id: jwt_payload._id
     }, (err, user) => {
       if (err) {
         done(err, false);

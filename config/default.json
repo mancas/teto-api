@@ -20,5 +20,9 @@
 
   "logger": {
     "prefix": "[JOSE REST API]: "
+  },
+
+  "owncloud": {
+    "path": "/Users/manu"
   }
 }

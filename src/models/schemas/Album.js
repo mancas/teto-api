@@ -9,6 +9,12 @@ module.exports = (mongoose, name) => {
       required: true
     },
 
+    // Folder name
+    internalName: {
+      type: String,
+      required: true
+    },
+
     summary: String,
 
     c_at: {

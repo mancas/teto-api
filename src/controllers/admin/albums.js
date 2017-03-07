@@ -2,7 +2,13 @@ const express = require('express');
 const models = require('../../models/index').models;
 const async = require('async');
 
+const config = require('config').get('owncloud');
+
+const fs = require('fs');
+const path = require('path');
+
 function list(req, res, next) {
+  const directories = _listDirectories();
   models.Album.find({}, (err, albums) => {
     if (err) {
       return next(err);
@@ -25,18 +31,15 @@ function list(req, res, next) {
         });
       }
 
-      res.send(albums);
+      res.send({albums, availableAlbums: directories});
     });
   });
-}
-
-function create(req, res, next) {
-  res.render('admin/pages/albums/form');
 }
 
 function processCreate(req, res, next) {
   const opts = {
     title: req.body.title,
+    internalName: req.body.internalName,
     summary: req.body.summary
   };
 
@@ -49,58 +52,58 @@ function processCreate(req, res, next) {
       });
     }
 
-    res.redirect(`/admin/albums/edit/${album._id}`);
-  });
-}
-
-function edit(req, res, next) {
-  _findAlbum(req.params.album_id).then(album => {
-    res.render('admin/pages/albums/form', {
-      album,
-      edition: true
-    });
-  }).catch(err => {
-    console.error(err);
-    return next({
-      status: 500,
-      error: err
-    });
+    res.send(album);
   });
 }
 
 function processEdit(req, res, next) {
-  _findUser(req.params.user_id).then(user => {
-    const password = req.body.password;
-    const password_repeated = req.body.password_repeat;
-
+  _findAlbum(req.params.album_id).then(album => {
     const opts = {
-      name: req.body.username,
-      role: req.body.role,
-      sex: req.body.sex
+      title: req.body.title || album.title || 'Default title',
+      internalName: req.body.internalName || album.internalName,
+      summary: req.body.summary
     };
 
-    if (password && password_repeated) {
-      opts.password = password;
-    }
-
-    user.set(opts);
-    user.save((err, user) => {
+    album.set(opts);
+    album.save((err, album) => {
       if (err) {
-        console.error(err);
         return next({
           status: 500,
           error: err
         });
       }
 
-      res.redirect('/admin/albums/');
+      res.send(album);
     });
   }).catch(err => {
-    console.error(err);
     return next({
       status: 500,
       error: err
     });
+  });
+}
+
+function get(req, res, next) {
+  _findAlbum(req.params.album_id).then(album => {
+    res.send(album);
+  }).catch(err => {
+    return next({
+      status: 500,
+      error: err
+    });
+  });
+}
+
+function removeAlbum(req, res, next) {
+  models.Album.findByIdAndRemove(req.params.album_id, (err, album) => {
+    if (err) {
+      return next({
+        status: 500,
+        error: err
+      });
+    }
+
+    res.send({success: true, album_id: req.params.album_id});
   });
 }
 
@@ -116,10 +119,20 @@ function _findAlbum(id) {
   });
 }
 
+function _listDirectories() {
+  const directories = fs.readdirSync(config.path).filter(file => {
+    console.info(file);
+    return fs.statSync(path.join(config.path, file)).isDirectory() && !file.startsWith('.');
+  });
+
+  return directories;
+}
+
+
 module.exports = {
   list,
-  create,
+  get,
   processCreate,
-  edit,
-  processEdit
+  processEdit,
+  removeAlbum
 };

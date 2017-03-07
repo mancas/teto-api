@@ -11,8 +11,15 @@ function list(req, res, next) {
   });
 }
 
-function create(req, res, next) {
-  res.render('admin/pages/users/form');
+function get(req, res, next) {
+  _findUser(req.params.user_id).then(user => {
+    res.send(user);
+  }).catch(err => {
+    next({
+      status: 500,
+      error: err
+    });
+  });
 }
 
 function processCreate(req, res, next) {
@@ -35,29 +42,13 @@ function processCreate(req, res, next) {
 
   models.User.signup(opts, (err, user) => {
     if (err) {
-      console.error(err);
       return next({
         status: 500,
         error: err
       });
     }
 
-    res.redirect(`/admin/users/edit/${user._id}`);
-  });
-}
-
-function edit(req, res, next) {
-  _findUser(req.params.user_id).then(user => {
-    res.render('admin/pages/users/form', {
-      user,
-      edition: true
-    });
-  }).catch(err => {
-    console.error(err);
-    return next({
-      status: 500,
-      error: err
-    });
+    res.send(user);
   });
 }
 
@@ -78,18 +69,16 @@ function processEdit(req, res, next) {
     user.set(opts);
     user.save((err, user) => {
       if (err) {
-        console.error(err);
         return next({
           status: 500,
           error: err
         });
       }
 
-      res.redirect('/admin/users/');
+      res.send(user);
     });
   }).catch(err => {
-    console.error(err);
-    return next({
+    next({
       status: 500,
       error: err
     });
@@ -107,8 +96,7 @@ function removeUser(req, res, next) {
       return;
     }
 
-    // TODO flash message
-    res.redirect('/admin/users/');
+    res.send({success: true, user_id: req.params.user_id});
   });
 }
 
@@ -127,9 +115,8 @@ function _findUser(id) {
 
 module.exports = {
   list,
-  create,
+  get,
   processCreate,
-  edit,
   processEdit,
   removeUser
 };
