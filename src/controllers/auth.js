@@ -46,23 +46,59 @@ function authenticationMiddleware(req, res, next) {
   }
 
   const decodedToken = jwt.decode(token, config.secret);
-  User.findOne({
-    _id: decodedToken._id
-  }, (err, user) => {
-    if (err) {
-      throw err;
-    }
-
+  _findUserById(decodedToken._id).then(user => {
     if (!user) {
       return res.status(403).send({success: false, msg: 'Authentication failed. User not found.'});
     }
 
     req.user = user;
     next();
+  }).catch(err => {
+    throw err;
+  });
+}
+
+function isAuthenticated(req, res, next) {
+  const token = _getToken(req.headers);
+  if (!token) {
+    return res.status(401).send({isAuthenticated: false});
+  }
+
+  const decodedToken = jwt.decode(token, config.secret);
+  _findUserById(decodedToken._id).then(user => {
+    if (!user) {
+      return res.status(401).send({isAuthenticated: false});
+    }
+
+    res.send({isAuthenticated: false, user});
+  }).catch(err => {
+    // LOG error
+    res.status(500).send({isAuthenticated: false, err: err.message});
+  });
+}
+
+function _findUserById(id) {
+  return new Promise((resolve, reject) => {
+    User.findOne({
+      _id: id
+    }, (err, user) => {
+      if (err) {
+        reject(err);
+        return;
+      }
+
+      if (!user) {
+        resolve(null);
+        return;
+      }
+
+      resolve(user);
+    });
   });
 }
 
 module.exports = {
   authenticate,
-  authenticationMiddleware
+  authenticationMiddleware,
+  isAuthenticated
 };
