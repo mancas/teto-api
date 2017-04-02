@@ -6,7 +6,15 @@ module.exports = (mongoose, name) => {
   const SchemaTypes = mongoose.Schema.Types;
 
   const schema = mongoose.Schema({
-    title: String,
+    title: {
+      type: String,
+      required: false
+    },
+
+    filename: {
+      type: String,
+      required: true
+    },
 
     album_id: {
       ref: 'Album',

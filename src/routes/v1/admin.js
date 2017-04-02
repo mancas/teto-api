@@ -14,6 +14,10 @@ router.put('/albums/:album_id', albumController.processEdit);
 
 router.delete('/albums/:album_id', albumController.removeAlbum);
 
+router.post('/images', albumController.listImagesFromFolder);
+
+router.get('/images/:folder/:image_name', albumController.getImageFromFolder);
+
 // IMAGES
 
 

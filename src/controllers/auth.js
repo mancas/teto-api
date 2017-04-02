@@ -21,7 +21,7 @@ function authenticate(req, res) {
 
     const token = jwt.encode(user, config.secret);
     // return the information including token as JSON
-    res.json({success: true, token: 'JWT ' + token});
+    res.json({success: true, token: 'JWT ' + token, user: JSON.stringify(user)});
   });
 }
 
@@ -70,7 +70,7 @@ function isAuthenticated(req, res, next) {
       return res.status(401).send({isAuthenticated: false});
     }
 
-    res.send({isAuthenticated: false, user});
+    res.send({isAuthenticated: true, user});
   }).catch(err => {
     // LOG error
     res.status(500).send({isAuthenticated: false, err: err.message});
@@ -97,8 +97,27 @@ function _findUserById(id) {
   });
 }
 
+function signup(req, res, next) {
+  console.error(req.body);
+  User.signup({
+    name: req.body.name,
+    password: req.body.password
+  }, (err, user) => {
+    if (err) {
+      console.error('Error creating user', err);
+      return next({
+        status: 500,
+        error: err
+      });
+    }
+
+    res.send(user);
+  });
+}
+
 module.exports = {
   authenticate,
   authenticationMiddleware,
-  isAuthenticated
+  isAuthenticated,
+  signup
 };

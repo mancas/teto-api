@@ -63,6 +63,7 @@ module.exports = (mongoose, name) => {
     };
     model.create(userData, (err, user) => {
       if (err) {
+        console.error('Error creating user', err);
         return cb(err);
       }
       cb(err, user);

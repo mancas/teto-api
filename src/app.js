@@ -1,6 +1,10 @@
 const express = require('express');
 const config = require('config');
 
+const path = require('path');
+
+const owncloud = config.get('owncloud');
+
 const bodyParser  = require('body-parser');
 
 const passport = require('passport');
@@ -16,6 +20,18 @@ const admin = require('./routes/v1/admin');
 const app = express();
 app.set('port', config.server.port || 3000);
 
+// CORS
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', req.headers.origin);
+  res.header('Access-Control-Allow-Credentials', true);
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  if (req.method === 'OPTIONS') {
+    return res.end();
+  }
+  next();
+});
+
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 
@@ -29,6 +45,10 @@ app.use('/admin',
   passport.authenticate('jwt', { session: false}),
   authController.authenticationMiddleware,
   admin);
+app.use('/static',
+  passport.authenticate('jwt', { session: false}),
+  authController.authenticationMiddleware,
+  express.static(path.join(__dirname, owncloud.path)));
 
 // catch 404 and forward to error handler
 app.use((req, res, next) => {

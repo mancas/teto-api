@@ -7,6 +7,8 @@ const config = require('config').get('owncloud');
 const fs = require('fs');
 const path = require('path');
 
+const ImageHelper = require('../../utils/ImageHelper');
+
 function list(req, res, next) {
   const directories = _listDirectories();
   models.Album.find({}, (err, albums) => {
@@ -31,6 +33,13 @@ function list(req, res, next) {
         });
       }
 
+      albums.forEach(album => {
+        const idx = directories.indexOf(album.internalName);
+        if (idx !== -1) {
+          directories.splice(idx, 1);
+        }
+      });
+
       res.send({albums, availableAlbums: directories});
     });
   });
@@ -52,7 +61,49 @@ function processCreate(req, res, next) {
       });
     }
 
-    res.send(album);
+    let images = _listImages(opts.internalName);
+
+    // TODO: create thumbnails and add watermark && create images on bd
+
+    async.each(images, (image, cb) => {
+      _createImage(image, opts.internalName, cb);
+    }, err => {
+      if (err) {
+        // TODO rollback
+        return next({
+          status: 500,
+          error: err
+        });
+      }
+
+      res.send({status: 'ok'});
+    });
+  });
+}
+
+function _createImage(image, folder, cb) {
+  const opts = {
+    title: '',
+    album_id: album._id,
+    filename: image.replace(/\.[^/.]+$/, "")
+  };
+
+  const folderPath = path.join(config.path, folder);
+
+  models.Photo.create(opts, (err, photo) => {
+    if (err) {
+      console.error(error);
+      return cb(error);
+    }
+
+    console.info(photo);
+
+    ImageHelper.generateThumbnail(path.join(folderPath, image)).then(() => {
+      cb();
+    }).catch(error => {
+      console.info(error);
+      cb(error);
+    });
   });
 }
 
@@ -128,11 +179,92 @@ function _listDirectories() {
   return directories;
 }
 
+function _listImages(folder) {
+  const folderPath = path.join(config.path, folder);
+
+  let images = fs.readdirSync(folderPath).filter(file => {
+    console.info(file);
+    const stat = fs.statSync(path.join(folderPath, file));
+    return !stat.isDirectory() && !file.startsWith('.') && file.indexOf('jpg') !== -1;
+  });
+
+  return images;
+}
+
+function listImagesFromFolder(req, res, next) {
+  const {folder} = req.body;
+
+  if (!folder) {
+    return next({
+      status: 500,
+      error: {
+        message: 'No folder specified'
+      }
+    });
+  }
+
+  let files = _listImages(folder);
+  const images = [];
+
+  async.each(files, (file, cb) => {
+    ImageHelper.sizeOf(path.join(config.path, folder, file)).then(dimensions => {
+      images.push(Object.assign({}, {
+        image: file.replace(/\.[^/.]+$/, "")
+      }, dimensions));
+      cb();
+    }).catch(err => cb(err))
+  }, err => {
+    if (err) {
+      console.info(err);
+      return next({
+        status: 500,
+        error: {
+          message: 'Size of error'
+        }
+      });
+    }
+
+    res.send({images});
+  });
+}
+
+function getImageFromFolder(req, res, next) {
+  const {folder, image_name} = req.params;
+
+  if (!folder || !image_name) {
+    return next({
+      status: 500,
+      error: {
+        message: 'No folder or image specified'
+      }
+    });
+  }
+
+  const folderPath = path.join(config.path, folder);
+  const imageWithExtension = fs.readdirSync(folderPath).find(file => {
+    return file.includes(image_name);
+  });
+  const imagePath = path.join(folderPath, imageWithExtension);
+
+  if (!fs.existsSync(folderPath) || !imageWithExtension) {
+    // Do something
+    return next({
+      status: 500,
+      error: {
+        message: 'Image or folder does not exits'
+      }
+    });
+  }
+
+  res.sendFile(imagePath);
+}
 
 module.exports = {
   list,
   get,
   processCreate,
   processEdit,
-  removeAlbum
+  removeAlbum,
+  listImagesFromFolder,
+  getImageFromFolder
 };

@@ -5,7 +5,7 @@
   },
 
   "db": {
-    "hosts": ["localhost:27017"],
+    "hosts": ["mongojose:27017"],
     "name": "jose-prepro",
     "username": "root",
     "password": "root",
@@ -23,6 +23,7 @@
   },
 
   "owncloud": {
-    "path": "/Users/manu"
+    "path": "/opt/api/albums",
+    "folder": "albums"
   }
 }
