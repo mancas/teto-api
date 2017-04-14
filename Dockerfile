@@ -12,6 +12,9 @@ COPY bin /opt/api/bin
 COPY config /opt/api/config
 COPY package.json /opt/api
 COPY start.sh /opt/api
+COPY public /opt/api/public
+
+RUN chmod -R 777 /opt/api/public
 
 RUN npm install
 

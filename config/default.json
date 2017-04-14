@@ -25,5 +25,9 @@
   "owncloud": {
     "path": "/opt/api/albums",
     "folder": "albums"
+  },
+
+  "images": {
+    "path": "/opt/api/public/images"
   }
 }

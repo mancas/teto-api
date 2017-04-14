@@ -4,6 +4,7 @@ const config = require('config');
 const path = require('path');
 
 const owncloud = config.get('owncloud');
+const albumImages = config.get('images');
 
 const bodyParser  = require('body-parser');
 
@@ -46,9 +47,7 @@ app.use('/admin',
   authController.authenticationMiddleware,
   admin);
 app.use('/static',
-  passport.authenticate('jwt', { session: false}),
-  authController.authenticationMiddleware,
-  express.static(path.join(__dirname, owncloud.path)));
+  express.static(path.join(__dirname, albumImages.path)));
 
 // catch 404 and forward to error handler
 app.use((req, res, next) => {

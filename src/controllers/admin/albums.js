@@ -7,6 +7,8 @@ const config = require('config').get('owncloud');
 const fs = require('fs');
 const path = require('path');
 
+const uuidV4 = require('uuid/v4');
+
 const ImageHelper = require('../../utils/ImageHelper');
 
 function list(req, res, next) {
@@ -66,7 +68,7 @@ function processCreate(req, res, next) {
     // TODO: create thumbnails and add watermark && create images on bd
 
     async.each(images, (image, cb) => {
-      _createImage(image, opts.internalName, cb);
+      _createImage(image, opts.internalName, album._id, cb);
     }, err => {
       if (err) {
         // TODO rollback
@@ -81,11 +83,12 @@ function processCreate(req, res, next) {
   });
 }
 
-function _createImage(image, folder, cb) {
+function _createImage(image, folder, album, cb) {
+  const filename = uuidV4();
   const opts = {
     title: '',
-    album_id: album._id,
-    filename: image.replace(/\.[^/.]+$/, "")
+    album_id: album,
+    filename
   };
 
   const folderPath = path.join(config.path, folder);
@@ -98,7 +101,8 @@ function _createImage(image, folder, cb) {
 
     console.info(photo);
 
-    ImageHelper.generateThumbnail(path.join(folderPath, image)).then(() => {
+    console.info(path.join(folderPath, image));
+    ImageHelper.generateThumbnail(path.join(folderPath, image), album.toString(), filename).then(() => {
       cb();
     }).catch(error => {
       console.info(error);
