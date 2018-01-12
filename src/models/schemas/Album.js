@@ -34,15 +34,12 @@ module.exports = (mongoose, name) => {
         return cb(err);
       }
 
-      mongoose.model('Photo').find({album_id: id}, (err, photos) => {
-        if (err) {
-          console.error(err);
-          return cb(err);
-        }
-
-        album.photos = photos;
-        cb(null, album);
-      })
+      mongoose.model('Photo').getPhotosFromAlbum(id).then(photos => {
+        cb(null, Object.assign({}, album._doc, {photos}));
+      }).catch(err => {
+        console.error(err);
+        return cb(err);
+      });
     });
   };
 

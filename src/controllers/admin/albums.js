@@ -18,14 +18,14 @@ function list(req, res, next) {
       return next(err);
     }
 
+    const items = [];
+
     async.each(albums, (album, cb) => {
-      models.Photo.find({ album_id: album._id }, (err, photos) => {
-        if (err) {
-          return cb(err);
-        }
-        album.photos = photos.length;
+      models.Photo.getPhotosFromAlbum(album._id).then(photos => {
+        console.info(photos);
+        items.push(Object.assign({}, album._doc, {photos}));
         cb();
-      });
+      }).catch(err => cb(err));
     }, (err) => {
       if (err) {
         console.error(err);
@@ -42,7 +42,7 @@ function list(req, res, next) {
         }
       });
 
-      res.send({albums, availableAlbums: directories});
+      res.send({albums: items, availableAlbums: directories});
     });
   });
 }
@@ -213,7 +213,7 @@ function listImagesFromFolder(req, res, next) {
   async.each(files, (file, cb) => {
     ImageHelper.sizeOf(path.join(config.path, folder, file)).then(dimensions => {
       images.push(Object.assign({}, {
-        image: file.replace(/\.[^/.]+$/, "")
+        filename: file.replace(/\.[^/.]+$/, "")
       }, dimensions));
       cb();
     }).catch(err => cb(err))

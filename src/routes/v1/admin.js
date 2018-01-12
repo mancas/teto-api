@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const albumController = require('../../controllers/admin/albums');
+const photoController = require('../../controllers/admin/photos');
 const userController = require('../../controllers/admin/users');
 
 // ALBUMS
@@ -19,6 +20,8 @@ router.post('/images', albumController.listImagesFromFolder);
 router.get('/images/:folder/:image_name', albumController.getImageFromFolder);
 
 // IMAGES
+
+router.post('/images/main', photoController.setMainPhoto);
 
 
 // USERS

@@ -46,8 +46,7 @@ app.use('/admin',
   passport.authenticate('jwt', { session: false}),
   authController.authenticationMiddleware,
   admin);
-app.use('/static',
-  express.static(path.join(__dirname, albumImages.path)));
+app.use('/static', express.static(albumImages.path));
 
 // catch 404 and forward to error handler
 app.use((req, res, next) => {
